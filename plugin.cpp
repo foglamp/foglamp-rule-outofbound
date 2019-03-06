@@ -68,7 +68,7 @@
 				"\"description\": \"Generate a notification if all configured assets trigger\", " \
 				"\"type\": \"string\", " \
 				"\"default\": \"Generate a notification if all configured assets trigger\", " \
-				"\"displayName\" : \"Generate a notification if all configured assets trigger\", " \
+				"\"displayName\" : \"Rule\", " \
 				"\"order\": \"1\" }, " \
 			"\"rule_config\": { " \
 				"\"description\": \"The array of rules.\", " \
@@ -94,7 +94,7 @@
 							   "\\\"datapoints\\\": [ {\\\"name\\\": \\\"\\\", " \
 									"\\\"type\\\": \\\"float\\\", " \
 									"\\\"trigger_value\\\": 0.0} ] } ] }\", " \
-				"\"displayName\" : \"Rule configuration\", " \
+				"\"displayName\" : \"Configuration\", " \
 				"\"order\": \"2\" }"
 
 #define BUITIN_RULE_DESC "\"plugin\": {\"description\": \"" RULE_NAME " notification rule\", " \
