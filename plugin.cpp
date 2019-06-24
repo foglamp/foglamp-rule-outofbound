@@ -87,7 +87,7 @@
 									"], \\\"value\\\": \\\"latest\\\" }, " \
 							   "\\\"time_window\\\": {" \
 								"\\\"description\\\": \\\"Duration of the time window, in seconds, " \
-								"for collecting data points except for 'latest' evaluation.\\\", " \
+								"for collecting data points except for latest evaluation.\\\", " \
 								"\\\"type\\\": \\\"integer\\\" , " \
 								"\\\"value\\\": " DEFAULT_TIME_INTERVAL " }, " \
 							   "\\\"eval_all_datapoints\\\" : true, " \
