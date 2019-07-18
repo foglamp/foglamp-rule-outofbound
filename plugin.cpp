@@ -76,13 +76,13 @@
 	    "rules": [												\
 		{												\
 		    "asset": {											\
-			"name": "",									\
+			"name": "",										\
 			"description": "The asset name for which notifications will be generated."		\
 		    },												\
 		    "eval_all_datapoints": "true",								\
 		    "datapoints": [										\
 			{											\
-				"name": "",								\
+				"name": "",									\
 				"type": "float",								\
 				"trigger_value": 0.0								\
 			}											\
@@ -356,12 +356,12 @@ bool evalData(const Value& point, double limitValue)
 	else
 	{       
 		if (point.IsInt() ||
-			point.IsUint() ||
-			point.IsInt64() ||
-			point.IsUint64())
+		    point.IsUint() ||
+		    point.IsInt64() ||
+		    point.IsUint64())
 		{       
 			if (point.IsInt() ||
-				point.IsUint())
+			    point.IsUint())
 			{       
 				if (point.GetInt() > limitValue)
 				{       
