@@ -170,6 +170,7 @@ string plugin_triggers(PLUGIN_HANDLE handle)
 
 	if (!rule->hasTriggers())
 	{
+		rule->unlockConfig();
 		ret = "{\"triggers\" : []}";
 		return ret;
 	}
