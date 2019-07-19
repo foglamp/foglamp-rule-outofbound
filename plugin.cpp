@@ -45,16 +45,24 @@
           "name": "random"
         }
       ],
-      "evaluation_type": {
+      "evaluation_data": {
         "options": [
-          "window",
-          "maximum",
-          "minimum",
-          "average"
+          "Single Item",
+          "Window"],
+        "type": "enumeration",
+        "description": "The rule evaluation data: single item or window",
+        "default" : "Single Item"
+      },
+      "window_data": {
+        "options": [
+          "All",
+          "Maximum",
+          "Minimum",
+          "Average"
         ],
         "type": "enumeration",
-        "description": "Rule evaluation type",
-        "value": "latest"
+        "description": "Window data evaluation type",
+        "value": "Average"
       },
       "eval_all_datapoints": true
     }
@@ -63,44 +71,78 @@
  * If all assets evaluations are true, then the notification is sent.
  */
 
-#define RULE_DEFAULT_CONFIG \
-			"\"description\": { " \
-				"\"description\": \"Generate a notification if all configured assets trigger\", " \
-				"\"type\": \"string\", " \
-				"\"default\": \"Generate a notification if all configured assets trigger\", " \
-				"\"displayName\" : \"Rule\", " \
-				"\"order\": \"1\" }, " \
-			"\"rule_config\": { " \
-				"\"description\": \"The array of rules.\", " \
-				"\"type\": \"JSON\", " \
-				"\"default\": \"{\\\"rules\\\" : [" \
-							"{ \\\"asset\\\" : {" \
-								"\\\"description\\\" : \\\"The asset name for which " \
-								"notifications will be generated.\\\", " \
-								"\\\"name\\\" : \\\"\\\" }, " \
-							   "\\\"evaluation_type\\\": {" \
-								"\\\"description\\\": \\\"Rule evaluation type\\\", " \
-								"\\\"type\\\": \\\"enumeration\\\", " \
-									"\\\"options\\\": [ " \
-										"\\\"window\\\", \\\"maximum\\\", " \
-										"\\\"minimum\\\", \\\"average\\\", \\\"latest\\\" " \
-									"], \\\"value\\\": \\\"latest\\\" }, " \
-							   "\\\"time_window\\\": {" \
-								"\\\"description\\\": \\\"Duration of the time window, in seconds, " \
-								"for collecting data points except for latest evaluation.\\\", " \
-								"\\\"type\\\": \\\"integer\\\" , " \
-								"\\\"value\\\": " DEFAULT_TIME_INTERVAL " }, " \
-							   "\\\"eval_all_datapoints\\\" : true, " \
-							   "\\\"datapoints\\\": [ {\\\"name\\\": \\\"\\\", " \
-									"\\\"type\\\": \\\"float\\\", " \
-									"\\\"trigger_value\\\": 0.0} ] } ] }\", " \
-				"\"displayName\" : \"Configuration\", " \
-				"\"order\": \"2\" }"
+#define RULE_CONFIG QUOTE(											\
+	{													\
+	    "rules": [												\
+		{												\
+		    "asset": {											\
+			"name": "",										\
+			"description": "The asset name for which notifications will be generated."		\
+		    },												\
+		    "eval_all_datapoints": "true",								\
+		    "datapoints": [										\
+			{											\
+				"name": "",									\
+				"type": "float",								\
+				"trigger_value": 0.0								\
+			}											\
+		    ],												\
+		    "evaluation_data": {									\
+			"description": "The rule evaluation data: single item or window",			\
+			"type": "enumeration",									\
+			"options": [										\
+				"Single Item",									\
+				"Window"									\
+			],											\
+			"value": "Single Item"									\
+		    },												\
+		    "window_data": {										\
+			"options": [										\
+				"All",										\
+				"Maximum",									\
+				"Minimum",									\
+				"Average"									\
+				],										\
+			"type": "enumeration",									\
+			"value": "Average",									\
+			"description": "Rule evaluation type"							\
+		    },												\
+		    "time_window": {										\
+			"type": "integer",									\
+			"value": 30,										\
+			"description": "Duration of the time window, in seconds, for collecting data points"	\
+		    }												\
+		}												\
+	    ]													\
+	}													\
+)
 
-#define BUITIN_RULE_DESC "\"plugin\": {\"description\": \"" RULE_NAME " notification rule\", " \
-			"\"type\": \"string\", \"default\": \"" RULE_NAME "\", \"readonly\": \"true\"}"
+#define RULE_DESC "OutOfBound notification rule"
 
-#define RULE_DEFAULT_CONFIG_INFO "{" BUITIN_RULE_DESC ", " RULE_DEFAULT_CONFIG "}"
+static const char *default_config = QUOTE(
+	{
+		"plugin": {
+			"description": RULE_DESC,
+			"type": "string",
+			"default": RULE_NAME ,
+			"readonly": "true"
+		},
+		"description": {
+			"description": "Generate a notification if all configured assets trigger",
+			"type": "string",
+			"default": "Generate a notification if all configured assets trigger",
+			"displayName": "Rule",
+			"order": "1"
+		},
+		"rule_config": {
+			"description": "The array of rules",
+			"type": "JSON",
+			"default": RULE_CONFIG,
+			"displayName": "Configuration",
+			"order": "2"
+		}
+	}
+);
 
 using namespace std;
 
@@ -119,7 +161,7 @@ static PLUGIN_INFORMATION ruleInfo = {
 	0,				// Flags
 	PLUGIN_TYPE_NOTIFICATION_RULE,	// Type
 	"1.0.0",			// Interface version
-	RULE_DEFAULT_CONFIG_INFO	// Configuration
+	default_config			// Configuration
 };
 
 /**
@@ -284,7 +326,6 @@ string plugin_reason(PLUGIN_HANDLE handle)
 void plugin_reconfigure(PLUGIN_HANDLE handle,
 			const string& newConfig)
 {
-
 	OutOfBound* rule = (OutOfBound *)handle;
 	ConfigCategory  config("new_outofbound", newConfig);
 	rule->configure(config);
@@ -294,8 +335,55 @@ void plugin_reconfigure(PLUGIN_HANDLE handle,
 };
 
 /**
+ * Eval data against limit value
+ *
+ * @param    point		Current input datapoint
+ * @param    limitValue		The DOUBLE limit value
+ * @return			True if limit is hit,
+ *				false otherwise
+ */
+bool evalData(const Value& point, double limitValue)
+{
+	bool ret = false;
+
+	if (point.IsDouble())
+	{       
+		if (point.GetDouble() > limitValue)
+		{       
+			ret = true;
+		}
+	}
+	else
+	{       
+		if (point.IsInt() ||
+		    point.IsUint() ||
+		    point.IsInt64() ||
+		    point.IsUint64())
+		{       
+			if (point.IsInt() ||
+			    point.IsUint())
+			{       
+				if (point.GetInt() > limitValue)
+				{       
+					ret = true;
+				}
+			}
+			else    
+			{       
+				if (point.GetInt64() > limitValue)
+				{       
+					ret = true;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+/**
  * Check whether the input datapoint
- * is a NUMBER and its value is greater than configured DOUBLE limit
+ * is a NUMBER or ARRAY (of numbers) and its value is greater than configured DOUBLE limit
  *
  * @param    point		Current input datapoint
  * @param    limitValue		The DOUBLE limit value
@@ -306,40 +394,26 @@ bool checkDoubleLimit(const Value& point, double limitValue)
 {
 	bool ret = false;
 
-	// Check config datapoint type
-	if (point.GetType() == kNumberType)
+	switch(point.GetType())
 	{
-		if (point.IsDouble())
-		{       
-			if (point.GetDouble() > limitValue)
-			{       
-				ret = true;
-			}
-		}
-		else
+	case kNumberType:
+		ret = evalData(point, limitValue);
+		break;
+
+	// This deals with window_data = All
+	case kArrayType:
+		for (Value::ConstValueIterator itr = point.Begin();
+		     itr != point.End();
+		     ++itr)
 		{
-  			if (point.IsInt() ||
-			    point.IsUint() ||
-			    point.IsInt64() ||
-			    point.IsUint64())
+			ret = evalData(point, limitValue);
+			if (ret == true)
 			{
-				if (point.IsInt() ||
-				    point.IsUint())
-				{
-					if (point.GetInt() > limitValue)
-					{
-						ret = true;
-					}
-				}
-				else
-				{
-					if (point.GetInt64() > limitValue)
-					{
-						ret = true;
-					}
-				}
+				break;
 			}
 		}
+	default:
+		break;
 	}
 
 	return ret;
@@ -470,16 +544,25 @@ void OutOfBound::configure(const ConfigCategory& config)
 					{
 						continue;
 					}
-					// evaluation_type can be empty, it means latest value
-					string evaluation_type;
+
+					bool window_evaluation = false;
+					// window_data can be empty, it means use SingleItem values
+					string window_data;
 					// time_interval might be not present only
-					// if evaluation_type is empty
+					// if window_data is empty
 					unsigned int timeInterval = 0;
-					if (rule.HasMember("evaluation_type"))
+					if (rule.HasMember("evaluation_data"))
 					{
-						const Value& type = rule["evaluation_type"];
-						evaluation_type = type["value"].GetString();
-						if (!evaluation_type.empty() &&
+						const Value& type = rule["evaluation_data"];
+						string evaluation_data = type["value"].GetString();
+						window_evaluation = evaluation_data.compare("Window") == 0;
+					}
+					if (window_evaluation && rule.HasMember("window_data"))
+					{
+						const Value& type = rule["window_data"];
+						// Set window_data value
+						window_data = type["value"].GetString();
+						if (!window_data.empty() &&
 						    rule.HasMember("time_interval"))
 						{
 							const Value& interval = rule["time_interval"];
@@ -500,16 +583,6 @@ void OutOfBound::configure(const ConfigCategory& config)
 						evalAlldatapoints = rule["eval_all_datapoints"].GetBool();
 					}
 
-					// Configuration change is protected by a lock
-					this->lockConfig();
-
-					if (this->hasTriggers())
-					{
-						//this->removeTriggers();
-					}
-					// Release lock
-					this->unlockConfig();
-
 					if (datapoints.IsArray())
 					{
 						for (auto& d : datapoints.GetArray())
@@ -527,7 +600,7 @@ void OutOfBound::configure(const ConfigCategory& config)
 									DatapointValue value(maxVal);
 									Datapoint* point = new Datapoint(dataPointName, value);
 									RuleTrigger* pTrigger = new RuleTrigger(dataPointName, point);
-									pTrigger->addEvaluation(evaluation_type,
+									pTrigger->addEvaluation(window_data,
 												timeInterval,
 												evalAlldatapoints);
 									
