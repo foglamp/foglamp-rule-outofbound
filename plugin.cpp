@@ -128,6 +128,7 @@ static const char *default_config = QUOTE(
 			"readonly": "true"
 		},
 		"description": {
+			"description": "Generate a notifiction if the values of one or all the configured assets exceeds a configured value",
 			"type": "string",
 			"default": "Generate a notification if all configured assets trigger",
 			"displayName": "Rule",
