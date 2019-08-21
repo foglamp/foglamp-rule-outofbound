@@ -122,24 +122,24 @@
 static const char *default_config = QUOTE(
 	{
 		"plugin": {
-			"description": RULE_DESC,
+			"description": "Generate a notifiction if the values of one or all the configured assets exceeds a configured value",
 			"type": "string",
 			"default": RULE_NAME ,
 			"readonly": "true"
 		},
 		"description": {
-			"description": "Generate a notification if all configured assets trigger",
+			"description": "Generate a notifiction if the values of one or all the configured assets exceeds a configured value",
 			"type": "string",
 			"default": "Generate a notification if all configured assets trigger",
 			"displayName": "Rule",
-			"order": "1"
+			"readonly": "true"
 		},
 		"rule_config": {
 			"description": "The array of rules",
 			"type": "JSON",
 			"default": RULE_CONFIG,
 			"displayName": "Configuration",
-			"order": "2"
+			"order": "1"
 		}
 	}
 );
