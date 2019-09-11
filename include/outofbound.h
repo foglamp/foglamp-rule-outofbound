@@ -1,7 +1,7 @@
 #ifndef _OVERMAX_RULE_H
 #define _OVERMAX_RULE_H
 /*
- * FogLAMP OutOfBound class
+ * Fledge OutOfBound class
  *
  * Copyright (c) 2019 Dianomic Systems
  *

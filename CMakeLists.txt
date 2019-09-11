@@ -4,16 +4,16 @@ cmake_minimum_required(VERSION 2.4.0)
 project(OutOfBound)
 
 # Supported options:
-# -DFOGLAMP_INCLUDE
-# -DFOGLAMP_LIB
-# -DFOGLAMP_SRC
-# -DFOGLAMP_INSTALL
+# -DFLEDGE_INCLUDE
+# -DFLEDGE_LIB
+# -DFLEDGE_SRC
+# -DFLEDGE_INSTALL
 #
-# If no -D options are given and FOGLAMP_ROOT environment variable is set
-# then FogLAMP libraries and header files are pulled from FOGLAMP_ROOT path.
+# If no -D options are given and FLEDGE_ROOT environment variable is set
+# then Fledge libraries and header files are pulled from FLEDGE_ROOT path.
 # The NOTIFICATION_SERVICE_INCLUDE_DIRS environment variable must point
-# to FogLAMP Notification server include files, example
-# export NOTIFICATION_SERVICE_INCLUDE_DIRS=/home/ubuntu/source/foglamp-service-notification/C/services/common/include
+# to Fledge Notification server include files, example
+# export NOTIFICATION_SERVICE_INCLUDE_DIRS=/home/ubuntu/source/fledge-service-notification/C/services/common/include
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3")
 
@@ -30,36 +30,36 @@ add_custom_command(
 )
 include_directories(${CMAKE_BINARY_DIR})
 
-# Add here all needed FogLAMP libraries as list
-set(NEEDED_FOGLAMP_LIBS common-lib plugins-common-lib)
+# Add here all needed Fledge libraries as list
+set(NEEDED_FLEDGE_LIBS common-lib plugins-common-lib)
 
 # Find source files
 file(GLOB SOURCES *.cpp)
 
-# Find FogLAMP includes and libs, by including FindFogLAMP.cmak file
+# Find Fledge includes and libs, by including FindFledge.cmak file
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
-find_package(FogLAMP)
+find_package(Fledge)
 # If errors: make clean and remove Makefile
-if (NOT FOGLAMP_FOUND)
+if (NOT FLEDGE_FOUND)
 	if (EXISTS "${CMAKE_BINARY_DIR}/Makefile")
 		execute_process(COMMAND make clean WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 		file(REMOVE "${CMAKE_BINARY_DIR}/Makefile")
 	endif()
 	# Stop the build process
-	message(FATAL_ERROR "FogLAMP plugin '${PROJECT_NAME}' build error.")
+	message(FATAL_ERROR "Fledge plugin '${PROJECT_NAME}' build error.")
 endif()
-# On success, FOGLAMP_INCLUDE_DIRS and FOGLAMP_LIB_DIRS variables are set 
+# On success, FLEDGE_INCLUDE_DIRS and FLEDGE_LIB_DIRS variables are set 
 
 # Add ./include
 include_directories(include)
 
-# Add FogLAMP include dir(s)
-include_directories(${FOGLAMP_INCLUDE_DIRS})
+# Add Fledge include dir(s)
+include_directories(${FLEDGE_INCLUDE_DIRS})
 
 # Add Notification server includes from NOTIFICATION_SERVICE_INCLUDE_DIRS env variable
 if (NOT DEFINED ENV{NOTIFICATION_SERVICE_INCLUDE_DIRS})
         # Stop the build process
-        message(FATAL_ERROR "FogLAMP plugin '${PROJECT_NAME}' build error. "
+        message(FATAL_ERROR "Fledge plugin '${PROJECT_NAME}' build error. "
 		"Notification server includes dir not set. Use NOTIFICATION_SERVICE_INCLUDE_DIRS env variable")
 else()
         message(STATUS "Notification server includes dir set to $ENV{NOTIFICATION_SERVICE_INCLUDE_DIRS}")
@@ -68,29 +68,29 @@ endif()
 include_directories($ENV{NOTIFICATION_SERVICE_INCLUDE_DIRS})
 
 # Add other include paths this plugin needs
-if (FOGLAMP_SRC)
-	message(STATUS "Using third-party includes " ${FOGLAMP_SRC}/C/thirdparty/Simple-Web-Server)
-	include_directories(${FOGLAMP_SRC}/C/thirdparty/Simple-Web-Server)
+if (FLEDGE_SRC)
+	message(STATUS "Using third-party includes " ${FLEDGE_SRC}/C/thirdparty/Simple-Web-Server)
+	include_directories(${FLEDGE_SRC}/C/thirdparty/Simple-Web-Server)
 else()
-	include_directories(${FOGLAMP_INCLUDE_DIRS}/Simple-Web-Server)
+	include_directories(${FLEDGE_INCLUDE_DIRS}/Simple-Web-Server)
 endif()
 
-# Add FogLAMP lib path
-link_directories(${FOGLAMP_LIB_DIRS})
+# Add Fledge lib path
+link_directories(${FLEDGE_LIB_DIRS})
 
 # Create shared library
 add_library(${PROJECT_NAME} SHARED ${SOURCES} version.h)
 
-# Add FogLAMP library names
-target_link_libraries(${PROJECT_NAME} ${NEEDED_FOGLAMP_LIBS})
+# Add Fledge library names
+target_link_libraries(${PROJECT_NAME} ${NEEDED_FLEDGE_LIBS})
 # Add additional libraries
 
 # Set the build version 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
 
-set(FOGLAMP_INSTALL "" CACHE INTERNAL "")
+set(FLEDGE_INSTALL "" CACHE INTERNAL "")
 # Install library
-if (FOGLAMP_INSTALL)
-	message(STATUS "Installing ${PROJECT_NAME} in ${FOGLAMP_INSTALL}/plugins/${PLUGIN_TYPE}/${PROJECT_NAME}")
-	install(TARGETS ${PROJECT_NAME} DESTINATION ${FOGLAMP_INSTALL}/plugins/${PLUGIN_TYPE}/${PROJECT_NAME})
+if (FLEDGE_INSTALL)
+	message(STATUS "Installing ${PROJECT_NAME} in ${FLEDGE_INSTALL}/plugins/${PLUGIN_TYPE}/${PROJECT_NAME}")
+	install(TARGETS ${PROJECT_NAME} DESTINATION ${FLEDGE_INSTALL}/plugins/${PLUGIN_TYPE}/${PROJECT_NAME})
 endif()

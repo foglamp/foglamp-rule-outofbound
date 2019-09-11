@@ -1,5 +1,5 @@
 /**
- * FogLAMP OutOfBound notification rule plugin
+ * Fledge OutOfBound notification rule plugin
  *
  * Copyright (c) 2019 Dianomic Systems
  *
