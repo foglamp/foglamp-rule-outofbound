@@ -268,31 +268,43 @@ bool plugin_eval(PLUGIN_HANDLE handle,
 		return false;
 	}
 
-	bool eval = false; 
 	OutOfBound* rule = (OutOfBound *)handle;
 	map<std::string, RuleTrigger *>& triggers = rule->getTriggers();
 
 	// Iterate throgh all configured assets
 	// If we have multiple asset the evaluation result is
 	// TRUE only if all assets checks returned true
+
+	int retCount = triggers.size();
 	for (auto t = triggers.begin();
 		  t != triggers.end();
 		  ++t)
 	{
 		string assetName = (*t).first;
-		if (!doc.HasMember(assetName.c_str()))
-		{
-			eval = false;
-		}
-		else
+		string assetTimestamp = "timestamp_" + assetName;
+		if (doc.HasMember(assetName.c_str()))
 		{
 			// Get all datapoints fir assetName
 			const Value& assetValue = doc[assetName.c_str()];
 
 			// Set evaluation
-			eval = evalAsset(assetValue, (*t).second);
+			if (evalAsset(assetValue, (*t).second) == true)
+			{
+				retCount--;
+			}
+
+			// Add evalution timestamp
+			if (doc.HasMember(assetTimestamp.c_str()))
+			{
+				const Value& assetTime = doc[assetTimestamp.c_str()];
+				double timestamp = assetTime.GetDouble();
+				rule->setEvalTimestamp(timestamp);
+			}
 		}
 	}
+
+	// if retCount = 0, all ssets checks returned true
+	bool eval = !retCount ? true : false;
 
 	// Set final state: true is all calls to evalAsset() returned true
 	rule->setState(eval);
@@ -314,7 +326,11 @@ string plugin_reason(PLUGIN_HANDLE handle)
 	string ret = "{ \"reason\": \"";
 	ret += info.getState() == BuiltinRule::StateTriggered ? "triggered" : "cleared";
 	ret += "\"";
-	ret += ", \"asset\": " + info.getAssets() + ", \"timestamp\": \"" + info.getUTCDateTime() + "\"";
+	ret += ", \"asset\": " + info.getAssets();
+	if (rule->getEvalTimestamp())
+	{
+		ret += string(", \"timestamp\": \"") + info.getUTCTimestamp() + string("\"");
+	}
 	ret += " }";
 
 	return ret;
@@ -358,7 +374,7 @@ bool evalData(const Value& point, double limitValue)
 		}
 	}
 	else
-	{       
+	{
 		if (point.IsInt() ||
 		    point.IsUint() ||
 		    point.IsInt64() ||
@@ -410,7 +426,7 @@ bool checkDoubleLimit(const Value& point, double limitValue)
 		     itr != point.End();
 		     ++itr)
 		{
-			ret = evalData(point, limitValue);
+			ret = evalData(*itr, limitValue);
 			if (ret == true)
 			{
 				break;
